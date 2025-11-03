@@ -1,15 +1,21 @@
 from flask import Flask
-from app.auth import auth_bp
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from flask_cors import CORS
+from .auth import auth_bp
+from .contacts import contacts_bp
+from config import Config
 
 def create_app():
-    app = Flask(__name__)
-    app.secret_key = os.getenv("SECRET_KEY", "devkey")
+    app = Flask(__name__, static_folder=None)
+    app.config.from_object(Config)
+    CORS(app, supports_credentials=True)
 
-    # Registro do Blueprint
-    app.register_blueprint(auth_bp)
+    # register blueprints
+    app.register_blueprint(auth_bp)        # routes under /auth/...
+    app.register_blueprint(contacts_bp)    # routes under /contacts/...
+
+    # simple healthcheck
+    @app.route("/health")
+    def health():
+        return {"status": "ok"}, 200
 
     return app
