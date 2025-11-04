@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-light-background text-light-text-primary dark:bg-dark-background dark:text-dark-text-primary transition-colors duration-300 font-sans;
+  }
+}
+
+@layer components {
+  /* Estilo base para os cards */
+  .card {
+    @apply bg-light-card border border-light-border dark:bg-dark-card dark:border-dark-border;
+  }
+
+}
