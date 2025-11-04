@@ -3,7 +3,6 @@
     <!-- Header Fixo -->
     <header class="bg-light-card dark:bg-dark-card shadow-sm sticky top-0 z-20">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
-        <!-- LOGO ATUALIZADO AQUI -->
         <a href="https://conectasuite.com/" target="_blank" class="flex items-center">
           <img 
             src="https://conectasuite.com/wp-content/uploads/2024/08/conecta-suite-logo.svg" 
@@ -37,10 +36,10 @@
                 <IconGrid v-if="layout === 'list'" />
                 <IconList v-else />
               </button>
-              <div class="relative">
+              <div class="relative" ref="exportMenuContainer">
                 <button @click="exportMenuOpen = !exportMenuOpen" class="btn btn-secondary !py-2 !px-3">{{ $t('export') }}</button>
                 <transition name="fade">
-                  <div v-if="exportMenuOpen" class="absolute right-0 mt-2 w-48 bg-light-card dark:bg-dark-card rounded-md shadow-lg border border-light-border dark:border-dark-border z-10">
+                  <div v-if="exportMenuOpen" class="absolute right-0 top-full mt-2 w-48 bg-light-card dark:bg-dark-card rounded-md shadow-lg border border-light-border dark:border-dark-border z-10">
                     <a @click="runExport('csv')" class="export-link">CSV</a>
                     <a @click="runExport('json')" class="export-link">JSON</a>
                     <a @click="runExport('excel')" class="export-link border-none">Excel (.xlsx)</a>
@@ -132,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue';
+import { ref, computed, reactive, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -160,6 +159,7 @@ const showCopyNotification = ref(false);
 const expanded = reactive({});
 const layout = ref('list');
 const exportMenuOpen = ref(false);
+const exportMenuContainer = ref(null);
 
 const { exportToCsv, exportToJson, exportToExcel } = useExport(grouped);
 
@@ -232,8 +232,22 @@ async function loadContacts() {
     }
 }
 
-// Lifecycle Hook
-onMounted(loadContacts);
+// Lógica para fechar o menu ao clicar fora (Click Away)
+const handleClickOutside = (event) => {
+  if (exportMenuContainer.value && !exportMenuContainer.value.contains(event.target)) {
+    exportMenuOpen.value = false;
+  }
+};
+
+// Lifecycle Hooks
+onMounted(() => {
+  loadContacts();
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <style scoped>
@@ -254,4 +268,4 @@ onMounted(loadContacts);
   transform: translateY(10px);
   opacity: 0;
 }
-</style>```
+</style>
