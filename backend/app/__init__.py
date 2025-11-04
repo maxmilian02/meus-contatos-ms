@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from .auth import auth_bp
 from .contacts import contacts_bp
 from config import Config
+import os # Importe o 'os'
 
 def create_app():
     app = Flask(__name__, static_folder=None)
@@ -36,5 +37,14 @@ def create_app():
                 "redirect_uri": app.config.get("MS_REDIRECT_URI")
             }
         }, 200
-
+    # ROTA DE DEBUG - Adicione este bloco
+    @app.route("/debug/env")
+    def debug_env():
+        return jsonify({
+            "MS_REDIRECT_URI_from_config": app.config.get("MS_REDIRECT_URI"),
+            "FRONTEND_URL_from_config": app.config.get("FRONTEND_URL"),
+            "SECRET_KEY_is_set": bool(app.config.get("SECRET_KEY")),
+            "MS_CLIENT_ID_is_set": bool(app.config.get("MS_CLIENT_ID")),
+        })
+    
     return app
