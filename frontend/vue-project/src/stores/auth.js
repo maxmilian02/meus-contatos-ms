@@ -1,37 +1,21 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import api from '@/services/api'
+import router from '@/router'
 
 export const useAuthStore = defineStore('auth', () => {
-  // State
   const isAuthenticated = ref(false)
-  const isLoading = ref(true)
-  const user = ref(null)
+  const isLoading = ref(true) // Inicia como true para a verificação inicial
+  const isLoggingOut = ref(false)
   const error = ref(null)
 
-  // Getters
-  const isReady = computed(() => !isLoading.value)
-
-  // Actions
   async function checkAuthStatus() {
     isLoading.value = true
-    error.value = null
-    
     try {
       const response = await api.get('/auth/status')
       isAuthenticated.value = response.data.is_authenticated
-      
-      if (isAuthenticated.value && response.data.user) {
-        user.value = response.data.user
-      }
-      
-      return isAuthenticated.value
     } catch (err) {
-      console.error('Erro ao verificar autenticação:', err)
       isAuthenticated.value = false
-      user.value = null
-      error.value = err.response?.data?.message || 'Erro ao verificar autenticação'
-      return false
     } finally {
       isLoading.value = false
     }
@@ -42,31 +26,19 @@ export const useAuthStore = defineStore('auth', () => {
     window.location.href = `${apiUrl}/auth/login`
   }
 
-  function logout() {
-    isAuthenticated.value = false
-    user.value = null
-    error.value = null
-    
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-    window.location.href = `${apiUrl}/auth/logout`
+  async function logout() {
+    isLoggingOut.value = true
+    try {
+      await api.get('/auth/logout')
+    } catch (err) {
+      console.error('Erro no logout do backend:', err)
+    } finally {
+      isAuthenticated.value = false
+      router.push('/')
+      // Um pequeno delay para a transição ser percebida
+      setTimeout(() => { isLoggingOut.value = false }, 300);
+    }
   }
-
-  function clearError() {
-    error.value = null
-  }
-
-  return {
-    // State
-    isAuthenticated,
-    isLoading,
-    user,
-    error,
-    // Getters
-    isReady,
-    // Actions
-    checkAuthStatus,
-    login,
-    logout,
-    clearError
-  }
+  
+  return { isAuthenticated, isLoading, isLoggingOut, error, checkAuthStatus, login, logout }
 })

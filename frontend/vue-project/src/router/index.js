@@ -20,24 +20,23 @@ const router = createRouter({
   ]
 })
 
-// Guard de navegação
+// Guard de navegação para proteger a rota de contatos
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   
   if (to.meta.requiresAuth) {
-    // Se ainda não verificou o status, verifica
-    if (auth.isLoading) {
+    // Sincroniza o estado de autenticação ANTES de decidir a rota
+    if (auth.isAuthenticated === false && auth.isLoading === true) {
       await auth.checkAuthStatus()
     }
     
     if (auth.isAuthenticated) {
-      next()
+      next() // Se autenticado, prossiga para /contatos
     } else {
-      // Redireciona para login do backend
-      window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/auth/login`
+      next({ name: 'home' }) // Se não, volte para a tela de login
     }
   } else {
-    next()
+    next() // Para rotas públicas, sempre permitir
   }
 })
 

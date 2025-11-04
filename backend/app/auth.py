@@ -17,10 +17,9 @@ def _build_msal_app(cache=None):
 
 @auth_bp.route("/auth/login")
 def login():
-    # Gerar e armazenar um state único na sessão
     state = str(uuid.uuid4())
     session["oauth_state"] = state
-    session.modified = True  # Força salvamento da sessão
+    session.modified = True
     
     msal_app = _build_msal_app()
     scopes = ["User.Read", "Contacts.Read"]
@@ -28,7 +27,8 @@ def login():
     auth_url = msal_app.get_authorization_request_url(
         scopes,
         state=state,
-        redirect_uri=current_app.config["MS_REDIRECT_URI"]
+        redirect_uri=current_app.config["MS_REDIRECT_URI"],
+        prompt='select_account'
     )
     
     return redirect(auth_url)
@@ -36,7 +36,6 @@ def login():
 
 @auth_bp.route("/auth/login/callback")
 def callback():
-    # Validar o state recebido
     received_state = request.args.get('state')
     session_state = session.get("oauth_state")
     
@@ -66,10 +65,8 @@ def callback():
     if "error" in result:
         return jsonify({"error": "msal_error", "details": result}), 400
     
-    # Limpar o state da sessão após uso
     session.pop("oauth_state", None)
     
-    # Salvar tokens
     session["msal_token"] = {
         "access_token": result.get("access_token"),
         "refresh_token": result.get("refresh_token"),
@@ -78,7 +75,6 @@ def callback():
     session["is_authenticated"] = True
     session.modified = True
 
-    # Redirecionar para a página de contatos no frontend
     return redirect(current_app.config["FRONTEND_URL"] + "/contatos")
 
 
@@ -90,11 +86,9 @@ def status():
 
 @auth_bp.route("/auth/logout")
 def logout():
+    # Limpa a sessão local da aplicação
     session.clear()
     
-    # Logout da Microsoft
-    logout_url = (
-        "https://login.microsoftonline.com/common/oauth2/v2.0/logout?" +
-        urlencode({"post_logout_redirect_uri": current_app.config["FRONTEND_URL"]})
-    )
-    return redirect(logout_url)
+    # Redireciona de volta para a tela de login no frontend
+    # sem deslogar da conta da Microsoft
+    return redirect(current_app.config["FRONTEND_URL"])
